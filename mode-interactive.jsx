@@ -93,15 +93,19 @@ function HudMode({ tweaks }) {
       { sev: 'HIGH', msg: 'LSASS read attempt — quarantined' },
       { sev: 'LOW',  msg: 'EDR signature update v2026.04.21' },
     ];
-    let i = 0;
-    const tick = () => {
-      const t = new Date();
-      const ts = t.toTimeString().slice(0,8);
-      setFeed(f => [{ t: ts, ...seed[i % seed.length] }, ...f].slice(0, 18));
-      i++;
+    // stagger the seed start so each visit opens with a different mix
+    let i = Math.floor(Math.random() * seed.length);
+    const entry = () => {
+      const ts = new Date().toTimeString().slice(0,8);
+      return { t: ts, ...seed[i++ % seed.length] };
     };
-    tick(); tick(); tick(); tick();
-    const iv = setInterval(tick, 3500);
+    // build the initial batch eagerly — queueing four updaters that each
+    // read `i` later would produce four identical rows under React 18 batching
+    setFeed([entry(), entry(), entry(), entry()].reverse());
+    const iv = setInterval(() => {
+      const e = entry();
+      setFeed(f => [e, ...f].slice(0, 18));
+    }, 3500);
     return () => clearInterval(iv);
   }, []);
 

@@ -59,8 +59,8 @@ function RetroMode({ tweaks }) {
             const filled = Math.round(s.level / 5);
             const bar = "█".repeat(filled) + "░".repeat(20 - filled);
             return (
-              <div key={s.name}>
-                <span style={{display:'inline-block', width:'220px'}}>{s.name}</span>
+              <div key={s.name} className="sk-line">
+                <span className="rk-n" style={{display:'inline-block', width:'220px'}}>{s.name}</span>
                 <span style={{color:'var(--r-fg)'}}>[{bar}]</span> <b>{s.level}%</b>
               </div>
             );
@@ -171,7 +171,7 @@ function RetroMode({ tweaks }) {
         <button onClick={() => setPage(p => Math.max(0, p-1))} disabled={page === 0}>◀ PREV</button>
         <span className="pageno">{(page+1).toString().padStart(2,'0')} / {pages.length.toString().padStart(2,'0')}</span>
         <button onClick={() => setPage(p => Math.min(pages.length-1, p+1))} disabled={page === pages.length - 1}>NEXT ▶</button>
-        <span style={{opacity:.6,fontSize:'13px',marginLeft:'12px'}}>[← / →] [1-{pages.length}]</span>
+        <span className="keys" style={{opacity:.6,fontSize:'13px',marginLeft:'12px'}}>[← / →] [1-{pages.length}]</span>
       </div>
     </div>
   );
