@@ -32,14 +32,17 @@ const MODE_ACCENTS = {
 };
 
 function App() {
-  const tweaks = useTweaks({ ...TWEAK_DEFAULTS, ...loadStoredTweaks() });
+  // lazy initializer: the storage read + JSON.parse runs once at mount,
+  // not on every render (e.g. every slider-drag tick)
+  const tweaks = useTweaks(() => ({ ...TWEAK_DEFAULTS, ...loadStoredTweaks() }));
   const [tk, setTweak] = tweaks;
 
   // boot plays once per browser session, not on every reload
-  const bootSeen = (() => {
-    try { return sessionStorage.getItem('aj-booted') === '1'; } catch (e) { return false; }
-  })();
-  const [booted, setBooted] = useStateApp(!tk.bootEnabled || bootSeen);
+  const [booted, setBooted] = useStateApp(() => {
+    let bootSeen = false;
+    try { bootSeen = sessionStorage.getItem('aj-booted') === '1'; } catch (e) {}
+    return !tk.bootEnabled || bootSeen;
+  });
   const finishBoot = () => {
     try { sessionStorage.setItem('aj-booted', '1'); } catch (e) {}
     setBooted(true);
