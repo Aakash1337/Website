@@ -2,7 +2,7 @@
 const { useState: useStateApp, useEffect: useEffectApp } = React;
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "mode": "hud",
+  "mode": "cyber",
   "themeColor": "cyber",
   "retroColor": "amber",
   "scanIntensity": 0.6,
@@ -12,10 +12,41 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "monoFont": "JetBrains Mono"
 }/*EDITMODE-END*/;
 
+// visitor preferences survive reloads (kept separate from the dev tweaks harness)
+const TWEAKS_STORE_KEY = 'aj-tweaks-v1';
+
+function loadStoredTweaks() {
+  try {
+    const raw = localStorage.getItem(TWEAKS_STORE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (e) { return {}; }
+}
+
+// accent used by app chrome (mode switcher, selection, focus rings)
+const MODE_ACCENTS = {
+  cyber: '#ff2d8a',
+  hud: '#00d9ff',
+  retro: { amber: '#ffb000', green: '#00ff88', cyan: '#74f0ff' }
+};
+
 function App() {
-  const tweaks = useTweaks(TWEAK_DEFAULTS);
+  // lazy initializer: the storage read + JSON.parse runs once at mount,
+  // not on every render (e.g. every slider-drag tick)
+  const tweaks = useTweaks(() => ({ ...TWEAK_DEFAULTS, ...loadStoredTweaks() }));
   const [tk, setTweak] = tweaks;
-  const [booted, setBooted] = useStateApp(!tk.bootEnabled);
+
+  // boot plays once per browser session, not on every reload
+  const [booted, setBooted] = useStateApp(() => {
+    let bootSeen = false;
+    try { bootSeen = sessionStorage.getItem('aj-booted') === '1'; } catch (e) {}
+    return !tk.bootEnabled || bootSeen;
+  });
+  const finishBoot = () => {
+    try { sessionStorage.setItem('aj-booted', '1'); } catch (e) {}
+    setBooted(true);
+  };
 
   // listen for in-terminal mode/theme switch events
   useEffectApp(() => {
@@ -29,6 +60,11 @@ function App() {
     };
   }, []);
 
+  // persist visitor preferences
+  useEffectApp(() => {
+    try { localStorage.setItem(TWEAKS_STORE_KEY, JSON.stringify(tk)); } catch (e) {}
+  }, [tk]);
+
   // apply font globally
   useEffectApp(() => {
     document.documentElement.style.setProperty('--mono', `'${tk.monoFont}', ui-monospace, monospace`);
@@ -40,8 +76,16 @@ function App() {
     document.documentElement.style.setProperty('--glitch', tk.glitchIntensity);
   }, [tk.scanIntensity, tk.glitchIntensity]);
 
+  // theme the app chrome to the active mode
+  useEffectApp(() => {
+    const accent = tk.mode === 'retro'
+      ? (MODE_ACCENTS.retro[tk.retroColor] || MODE_ACCENTS.retro.amber)
+      : (MODE_ACCENTS[tk.mode] || MODE_ACCENTS.cyber);
+    document.documentElement.style.setProperty('--ui-accent', accent);
+  }, [tk.mode, tk.retroColor]);
+
   if (!booted) {
-    return <BootSequence onDone={() => setBooted(true)} mode={tk.mode} />;
+    return <BootSequence onDone={finishBoot} mode={tk.mode} />;
   }
 
   const showScanlines = tk.scanIntensity > 0.05;
@@ -63,7 +107,7 @@ function App() {
       </div>
 
       {/* Mode switcher */}
-      <div className="mode-switch">
+      <div className="mode-switch" role="group" aria-label="Site mode">
         <span className="label-mode">MODE</span>
         <button className={tk.mode === 'cyber' ? 'active' : ''} onClick={() => setTweak('mode', 'cyber')}>NORMAL</button>
         <button className={tk.mode === 'retro' ? 'active' : ''} onClick={() => setTweak('mode', 'retro')}>TERMINAL</button>
