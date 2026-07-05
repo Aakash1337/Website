@@ -959,7 +959,8 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.25); }
 /* identity panel (left) */
 .hud .id-panel .pb { padding: 14px; }
 .hud .id-panel pre {
-  font-size: 6px;
+  /* match the terminal banner's rendering, scaled to the panel width */
+  font-size: 9px;
   line-height: 1.05;
   color: var(--hud-cyan);
   white-space: pre;
@@ -967,8 +968,9 @@ body::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.25); }
   margin-bottom: 18px;
   padding-bottom: 14px;
   border-bottom: 1px dotted var(--hud-border);
-  text-shadow: 0 0 4px rgba(0,217,255,.4);
-  text-align: center;
+  text-shadow: 0 0 6px rgba(0,217,255,.4);
+  display: flex;
+  justify-content: center;
 }
 .hud .id-panel .name { color: var(--hud-fg); font-size: 14px; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px; }
 .hud .id-panel .role { color: var(--hud-cyan); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; }
